@@ -18,6 +18,7 @@ npm run dev          # nodemon server.js
 npm run db:init      # Initialize DB schema (first time only)
 npm test             # Run Jest tests
 npm run test:watch   # Watch mode
+npx jest src/tests/auth.test.js   # Run a single test file
 ```
 
 ### Frontend (from /frontend)
@@ -26,6 +27,14 @@ npm run dev          # Vite dev server at http://127.0.0.1:5173
 npm run build        # Production build
 npm run lint         # ESLint
 npm test             # Vitest run
+npx vitest run src/tests/Artists.test.jsx  # Run a single test file
+```
+
+### DB scripts (from /backend)
+```bash
+node src/scripts/verify-db.js       # Check DB connection and schema
+node src/scripts/apply-indexes.js   # Apply performance indexes
+node src/scripts/verify-owasp.js    # Run OWASP security checks
 ```
 
 ## Architecture
@@ -38,7 +47,7 @@ npm test             # Vitest run
 
 ### Auth flow
 - JWT stored in `httpOnly` cookies. Refresh tokens stored in DB and rotated on use.
-- Google OAuth and Spotify OAuth both use the same pattern: set `oauth_state` cookie → redirect to provider → callback validates state → set JWT cookies.
+- Google OAuth and Spotify OAuth both use the same pattern: set `oauth_state` cookie → redirect to provider → callback validates state → set JWT cookies. Spotify tokens (access + refresh) are AES-encrypted before storing in the DB and decrypted on use via `spotifyController.js`.
 - **Critical**: OAuth callbacks go through Vercel's proxy (browser navigates to `/api/auth/google/callback`), so JWT cookies land on the Vercel domain. All axios requests must also go through Vercel (relative URLs) so cookies are sent correctly.
 - Vercel's edge proxy strips `Set-Cookie` headers from **302** responses. All `res.redirect()` calls in `authController.js` are replaced with `res.send(htmlRedirect(url))` — a 200 HTML page using `<meta http-equiv="refresh">` — to preserve cookies. Do not revert this to `res.redirect()`.
 
@@ -53,7 +62,7 @@ backend/
     middleware/              # authenticate (JWT), cache
     services/                # googleCalendar.js (Google Calendar API integration)
     utils/crypto.js          # AES-256-CBC encrypt/decrypt for storing OAuth tokens
-    workers/                 # Background cron jobs
+    scripts/                 # One-off DB scripts: init-db, verify-db, apply-indexes, verify-owasp
 ```
 
 Raw SQL via `pg` — no ORM. Always use parameterized queries (`$1, $2`). The `query()` helper from `config/database.js` is the standard way to run queries.

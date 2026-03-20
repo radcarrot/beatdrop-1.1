@@ -13,8 +13,6 @@ const Settings = () => {
     const { user, logout, refreshUser } = useAuth();
 
     // States for integrations and preferences
-    const [spotifyConnected, setSpotifyConnected] = useState(false);
-    const [spotifyUsername, setSpotifyUsername] = useState('');
     const [googleCalendarSync, setGoogleCalendarSync] = useState(true);
     const [emailAlerts, setEmailAlerts] = useState(true);
     const [artistTrackingPush, setArtistTrackingPush] = useState(false);
@@ -36,15 +34,7 @@ const Settings = () => {
         // Fetch User Profile Preferences and Spotify Connection Status
         const fetchIntegrations = async () => {
             try {
-                const [spotifyRes, profileRes] = await Promise.all([
-                    axios.get(`${API_URL}/api/spotify/status`),
-                    axios.get(`${API_URL}/api/users/profile`)
-                ]);
-
-                if (spotifyRes.data.connected) {
-                    setSpotifyConnected(true);
-                    setSpotifyUsername(spotifyRes.data.spotify_id || 'Authenticated User');
-                }
+                const profileRes = await axios.get(`${API_URL}/api/users/profile`);
 
                 if (profileRes.data) {
                     const data = profileRes.data;
@@ -62,20 +52,6 @@ const Settings = () => {
 
         fetchIntegrations();
     }, []);
-
-    const handleSpotifyDisconnect = async () => {
-        try {
-            await axios.post(`${API_URL}/api/spotify/disconnect`);
-            setSpotifyConnected(false);
-            setSpotifyUsername('');
-            toast.success('Spotify disconnected successfully');
-        } catch (err) {
-            console.error("Failed to disconnect Spotify", err);
-            // Fallback for UI if endpoint not implemented yet
-            setSpotifyConnected(false);
-            toast.error('Failed to disconnect Spotify account');
-        }
-    };
 
     const updatePreference = async (key, value) => {
         try {
@@ -222,37 +198,6 @@ const Settings = () => {
                         Connected Accounts
                     </h3>
                     <div className="bg-[#1a1a1a]/40 backdrop-blur-md border border-white/5 border-l-2 border-l-primary/40 rounded-none overflow-hidden divide-y divide-white/5">
-
-                        {/* Spotify Integration */}
-                        <div className="p-6 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="size-12 rounded-lg bg-[#1DB954]/20 flex items-center justify-center text-[#1DB954]">
-                                    <svg className="size-6" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.494 17.306c-.215.353-.673.464-1.026.249-2.845-1.738-6.427-2.13-10.647-1.166-.403.093-.806-.157-.899-.56-.093-.404.157-.806.561-.899 4.622-1.056 8.577-.613 11.762 1.334.353.215.464.673.249 1.026zm1.467-3.258c-.271.44-.846.578-1.287.307-3.257-2.003-8.223-2.583-12.074-1.414-.495.15-1.02-.128-1.17-.623s.128-1.02.623-1.17c4.407-1.338 9.883-.687 13.601 1.599.44.271.578.847.307 1.288zm.127-3.385c-3.906-2.319-10.334-2.533-14.079-1.396-.599.182-1.229-.164-1.411-.763s.164-1.23.763-1.411c4.303-1.306 11.404-1.05 15.934 1.64.538.319.716 1.015.397 1.553-.319.539-1.015.717-1.554.398l-.05-.02z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white">Spotify Sync</h4>
-                                    <p className="text-sm text-slate-400">
-                                        {spotifyConnected ? `Connected as ${spotifyUsername}` : 'Not connected to Spotify'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {spotifyConnected ? (
-                                <button
-                                    onClick={handleSpotifyDisconnect}
-                                    className="text-sm font-medium text-slate-400 hover:text-white px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-all cursor-pointer">
-                                    Disconnect
-                                </button>
-                            ) : (
-                                <a
-                                    href="/api/auth/spotify"
-                                    className="text-sm font-medium text-[#1DB954] hover:text-[#1DB954] px-4 py-2 rounded-lg border border-[#1DB954]/30 bg-[#1DB954]/10 hover:bg-[#1DB954]/20 transition-all">
-                                    Connect
-                                </a>
-                            )}
-                        </div>
 
                         {/* Google Calendar */}
                         <div className="p-6 flex items-center justify-between">

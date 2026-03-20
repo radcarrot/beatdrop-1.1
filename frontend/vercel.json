@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://BACKEND_VERCEL_URL/api/$1"
+      "destination": "https://beatdrop-1-1.vercel.app/api/$1"
     },
     {
       "source": "/(.*)",

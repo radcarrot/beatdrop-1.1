@@ -32,11 +32,7 @@ const Dashboard = () => {
     });
     const [searchArtist, setSearchArtist] = useState('');
 
-    // Spotify state
-    const [spotifyConnected, setSpotifyConnected] = useState(false);
-    const [topArtists, setTopArtists] = useState([]);
-
-    // Spotify search for event tagging
+    // Artist search for event tagging
     const [artistSearchQuery, setArtistSearchQuery] = useState('');
     const [artistSearchResults, setArtistSearchResults] = useState([]);
     const [taggedArtists, setTaggedArtists] = useState([]);
@@ -47,25 +43,7 @@ const Dashboard = () => {
         return () => { mountedRef.current = false; };
     }, []);
 
-    // Fetch Spotify status + top artists
-    useEffect(() => {
-        const fetchSpotifyData = async () => {
-            try {
-                const statusRes = await axios.get('/api/spotify/status');
-                setSpotifyConnected(statusRes.data.connected);
-
-                if (statusRes.data.connected) {
-                    const topRes = await axios.get('/api/spotify/top-artists');
-                    setTopArtists(topRes.data);
-                }
-            } catch (err) {
-                console.error('Failed to fetch Spotify data:', err);
-            }
-        };
-        fetchSpotifyData();
-    }, []);
-
-    // Debounced Spotify artist search
+    // Debounced artist search
     const handleArtistSearch = (value) => {
         setArtistSearchQuery(value);
         if (searchTimeout) clearTimeout(searchTimeout);
@@ -96,30 +74,6 @@ const Dashboard = () => {
 
     const handleRemoveTag = (spotifyId) => {
         setTaggedArtists(taggedArtists.filter(a => a.spotify_id !== spotifyId));
-    };
-
-    // Track a Spotify artist (add to tracked artists DB)
-    const handleTrackSpotifyArtist = async (artist) => {
-        try {
-            // Create artist in DB if not exists
-            const createRes = await axios.post(`${API_URL}/api/artists`, {
-                name: artist.name,
-                spotify_id: artist.spotify_id,
-                image_url: artist.image_url,
-                genres: artist.genres
-            });
-            const newArtist = createRes.data;
-            // Track the artist
-            await axios.post(`${API_URL}/api/artists/track`, { artist_id: newArtist.id });
-            setTrackedArtists(prev => {
-                if (prev.find(a => a.id === newArtist.id)) return prev;
-                return [...prev, newArtist];
-            });
-            toast.success(`Tracked ${newArtist.name} successfully`);
-        } catch (err) {
-            console.error("Failed to track artist:", err);
-            toast.error("Failed to track artist");
-        }
     };
 
     const handleTrackArtist = async (e) => {
@@ -366,23 +320,6 @@ const Dashboard = () => {
                                 </div>
                             )}
 
-                            {!spotifyConnected ? (
-                                <a
-                                    href="/api/auth/spotify"
-                                    className="group flex items-center gap-3 bg-card-dark hover:bg-[#1DB954]/10 border border-[#1DB954]/30 text-[#1DB954] px-5 py-2.5 rounded-full transition-all duration-300 hover:shadow-[0_0_15px_rgba(29,185,84,0.3)]">
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                                        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.54-1.02.72-1.56.3z" />
-                                    </svg>
-                                    <span className="font-bold tracking-wide text-sm">Connect Spotify</span>
-                                </a>
-                            ) : (
-                                <div className="group flex items-center gap-3 bg-[#1DB954]/10 border border-[#1DB954]/30 text-[#1DB954] px-5 py-2.5 rounded-full">
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                                        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.54-1.02.72-1.56.3z" />
-                                    </svg>
-                                    <span className="font-bold tracking-wide text-sm">Spotify Connected</span>
-                                </div>
-                            )}
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 z-10">
@@ -766,7 +703,7 @@ const Dashboard = () => {
                                             value={newEvent.url}
                                             onChange={(e) => setNewEvent({ ...newEvent, url: e.target.value })}
                                             className="bg-transparent w-full text-white outline-none"
-                                            placeholder="https://spotify.com/..." type="url" />
+                                            placeholder="https://..." type="url" />
                                     </div>
                                 </label>
                             </div>
@@ -784,7 +721,7 @@ const Dashboard = () => {
 
                         {/* Artist Tagging Section */}
                         <div className="mt-6 pt-6 border-t border-accent-dark">
-                            <span className="text-gray-400 text-sm font-medium mb-3 block">Tag Artists {spotifyConnected && <span className="text-[#1DB954] text-xs">(powered by Spotify)</span>}</span>
+                            <span className="text-gray-400 text-sm font-medium mb-3 block">Tag Artists</span>
 
                             {/* Tagged artists pills */}
                             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -808,20 +745,14 @@ const Dashboard = () => {
 
                             {/* Search input */}
                             <div className="relative">
-                                <div className="flex items-center bg-background-dark border border-accent-dark rounded-xl px-4 py-3 focus-within:border-[#1DB954]">
+                                <div className="flex items-center bg-background-dark border border-accent-dark rounded-xl px-4 py-3 focus-within:border-primary">
                                     <span className="material-symbols-outlined text-gray-500 text-sm mr-2">search</span>
                                     <input
                                         value={artistSearchQuery}
                                         onChange={(e) => handleArtistSearch(e.target.value)}
                                         className="bg-transparent w-full text-white outline-none placeholder:text-gray-600"
-                                        placeholder={spotifyConnected ? "Search any artist on Spotify..." : "Connect Spotify to search artists"}
-                                        disabled={!spotifyConnected}
+                                        placeholder="Search any artist..."
                                         type="text" />
-                                    {spotifyConnected && (
-                                        <svg viewBox="0 0 24 24" fill="#1DB954" className="w-4 h-4 ml-2 shrink-0 opacity-50">
-                                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.54-1.02.72-1.56.3z" />
-                                        </svg>
-                                    )}
                                 </div>
 
                                 {/* Search results dropdown */}
@@ -911,45 +842,6 @@ const Dashboard = () => {
                             {events.length === 0 && <p className="text-gray-500 text-sm">No upcoming events.</p>}
                         </div>
                     </section>
-
-                    {/* Spotify Top Artists */}
-                    {spotifyConnected && topArtists.length > 0 && (
-                        <section>
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-white font-bold text-lg tracking-wide flex items-center gap-2">
-                                    <svg viewBox="0 0 24 24" fill="#1DB954" className="w-5 h-5">
-                                        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.54-1.02.72-1.56.3z" />
-                                    </svg>
-                                    Your Top Artists
-                                </h3>
-                            </div>
-                            <div className="space-y-2">
-                                {topArtists.slice(0, 8).map((artist, idx) => (
-                                    <div key={artist.spotify_id}
-                                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-accent-dark transition-colors group">
-                                        <span className="text-gray-600 text-xs font-mono w-4 text-right">{idx + 1}</span>
-                                        {artist.image_url ? (
-                                            <img src={artist.image_url} alt="" className="size-10 rounded-full object-cover shrink-0 border border-white/5" />
-                                        ) : (
-                                            <div className="size-10 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
-                                                <span className="material-symbols-outlined text-gray-400">person</span>
-                                            </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-white text-sm font-medium truncate group-hover:text-[#1DB954] transition-colors">{artist.name}</p>
-                                            <p className="text-gray-500 text-[10px] truncate">{artist.genres?.slice(0, 2).join(', ')}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => handleTrackSpotifyArtist(artist)}
-                                            className="opacity-0 group-hover:opacity-100 px-2 py-1 rounded-lg bg-[#1DB954]/20 text-[#1DB954] text-xs font-bold hover:bg-[#1DB954]/30 transition-all"
-                                            title="Track this artist">
-                                            Track
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
 
                     {/* Tracked Artists */}
                     <section className="flex-1">
@@ -1103,7 +995,7 @@ const Dashboard = () => {
                                                     value={editForm.url}
                                                     onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
                                                     className="bg-transparent w-full text-white outline-none"
-                                                    placeholder="https://spotify.com/..." type="url" />
+                                                    placeholder="https://..." type="url" />
                                             </div>
                                         </label>
 

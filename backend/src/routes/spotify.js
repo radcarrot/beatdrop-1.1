@@ -1,8 +1,7 @@
 import express from 'express';
 import { query, validationResult } from 'express-validator';
-import { cacheMiddleware } from '../middleware/cacheMiddleware.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
-import { getSpotifyStatus, getTopArtists, searchArtists, disconnectSpotify } from '../controllers/spotifyController.js';
+import { searchArtists } from '../controllers/spotifyController.js';
 
 const router = express.Router();
 
@@ -19,10 +18,6 @@ const validateSearch = [
     handleValidationErrors
 ];
 
-router.get('/status', authenticateToken, getSpotifyStatus);
-// Cache the top-artists response for 15 minutes (900s) to prevent Spotify rate limiting
-router.get('/top-artists', authenticateToken, cacheMiddleware(900), getTopArtists);
 router.get('/search', authenticateToken, validateSearch, searchArtists);
-router.post('/disconnect', authenticateToken, disconnectSpotify);
 
 export default router;

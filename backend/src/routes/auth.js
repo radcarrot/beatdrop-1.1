@@ -1,6 +1,6 @@
 import express from 'express';
 import { body, query, validationResult } from 'express-validator';
-import { register, login, me, refresh, logout, googleAuth, googleCallback, spotifyAuth, spotifyCallback } from '../controllers/authController.js';
+import { register, login, me, refresh, logout, googleAuth, googleCallback } from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import rateLimit from 'express-rate-limit';
 
@@ -52,7 +52,5 @@ router.get('/me', authenticateToken, me);
 router.get('/google', googleAuth);
 router.get('/google/callback', validateOAuth, googleCallback);
 
-router.get('/spotify', spotifyAuth);
-router.get('/spotify/callback', validateOAuth, spotifyCallback);
 
 export default router;

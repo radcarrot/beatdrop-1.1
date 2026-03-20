@@ -2,11 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://music-calendar-production.up.railway.app/api/$1"
-    },
-    {
-      "source": "/uploads/(.*)",
-      "destination": "https://music-calendar-production.up.railway.app/uploads/$1"
+      "destination": "https://BACKEND_VERCEL_URL/api/$1"
     },
     {
       "source": "/(.*)",

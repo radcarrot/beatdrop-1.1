@@ -183,8 +183,8 @@ export const logout = async (req, res) => {
         if (refreshToken) {
             await query('UPDATE users SET refresh_token = NULL WHERE refresh_token = $1', [refreshToken]);
         }
-        res.clearCookie('jwt');
-        res.clearCookie('refreshToken');
+        res.clearCookie('jwt', COOKIE_OPTIONS);
+        res.clearCookie('refreshToken', REFRESH_COOKIE_OPTIONS);
         res.status(200).json({ message: 'Logged out successfully' });
     } catch (err) {
         console.error('Error logging out:', err);

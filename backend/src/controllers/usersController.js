@@ -1,11 +1,11 @@
-import pool from '../config/database.js';
+import pool, { query } from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
 // GET /api/users/profile
 export const getProfile = async (req, res) => {
     try {
         const userId = req.user.id;
-        const result = await pool.query(
+        const result = await query(
             'SELECT id, name, email, profile_image_url, google_sync_enabled, email_alerts, push_alerts FROM users WHERE id = $1',
             [userId]
         );
@@ -54,7 +54,7 @@ export const updatePreferences = async (req, res) => {
         updateQuery += ` WHERE id = $${valueCount} RETURNING id, name, email, google_sync_enabled, email_alerts, push_alerts`;
         values.push(userId);
 
-        const result = await pool.query(updateQuery, values);
+        const result = await query(updateQuery, values);
 
         res.json({ message: 'Preferences updated successfully', user: result.rows[0] });
     } catch (err) {
@@ -78,7 +78,7 @@ export const updatePassword = async (req, res) => {
             return res.status(400).json({ error: 'New password must be at least 8 characters long and contain at least one letter and one number.' });
         }
 
-        const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [userId]);
+        const result = await query('SELECT password_hash FROM users WHERE id = $1', [userId]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
 
         const isMatch = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
@@ -89,7 +89,7 @@ export const updatePassword = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, userId]);
+        await query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, userId]);
 
         res.json({ message: 'Password updated successfully' });
     } catch (err) {
@@ -137,7 +137,7 @@ export const uploadProfileImage = async (req, res) => {
         const dataUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
         const userId = req.user.id;
 
-        await pool.query('UPDATE users SET profile_image_url = $1 WHERE id = $2', [dataUrl, userId]);
+        await query('UPDATE users SET profile_image_url = $1 WHERE id = $2', [dataUrl, userId]);
 
         res.json({ message: 'Profile image updated successfully', profile_image_url: dataUrl });
     } catch (err) {

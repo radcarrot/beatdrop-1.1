@@ -7,11 +7,6 @@ dotenv.config();
 const isTest = process.env.NODE_ENV === 'test';
 const dbName = process.env.DB_NAME || 'music_calendar';
 
-console.log('--- DB INIT ---');
-console.log('DATABASE_URL length:', process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 'UNDEFINED');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('DB_HOST:', process.env.DB_HOST);
-console.log('---------------');
 
 const pool = new Pool(
   process.env.DATABASE_URL 

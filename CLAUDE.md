@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Known issues
+See `bugs.md` (repo root) — static audit 2026-06-01, 10 findings, severity-tagged with file:line + fix. None fixed yet.
+
 ## Commands
 
 ### Development (from repo root)

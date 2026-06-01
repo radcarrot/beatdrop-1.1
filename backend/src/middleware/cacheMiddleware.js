@@ -23,8 +23,10 @@ export const cacheMiddleware = (durationSeconds) => {
             // Hijack res.json to save the response to the cache before sending it
             const originalJson = res.json;
             res.json = (body) => {
-                // Determine duration; fallback to default if not specified
-                apiCache.set(key, body, durationSeconds || 300);
+                // Only cache successful responses — never cache errors (4xx/5xx)
+                if (res.statusCode < 400) {
+                    apiCache.set(key, body, durationSeconds || 300);
+                }
                 originalJson.call(res, body);
             };
             next();

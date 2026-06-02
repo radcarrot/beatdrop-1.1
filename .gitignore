@@ -8,3 +8,7 @@ foragent/
 .DS_Store
 .agent/
 ~/
+.claude/
+.omc/
+CLAUDE.md
+AGENTS.md

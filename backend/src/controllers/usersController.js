@@ -1,6 +1,15 @@
 import pool, { query } from '../config/database.js';
 import bcrypt from 'bcryptjs';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Must match the auth cookie options in authController.js so clearCookie matches.
+const CLEAR_COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax'
+};
+
 // GET /api/users/profile
 export const getProfile = async (req, res) => {
     try {
@@ -115,8 +124,9 @@ export const deleteAccount = async (req, res) => {
 
         await client.query('COMMIT');
 
-        // Clear auth cookie by setting a very short max-age
-        res.cookie('token', '', { httpOnly: true, maxAge: 1 });
+        // Clear the real auth cookies (jwt + refreshToken) set by authController
+        res.clearCookie('jwt', CLEAR_COOKIE_OPTIONS);
+        res.clearCookie('refreshToken', CLEAR_COOKIE_OPTIONS);
         res.json({ message: 'Account successfully deleted' });
     } catch (err) {
         await client.query('ROLLBACK');

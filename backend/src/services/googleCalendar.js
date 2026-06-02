@@ -47,6 +47,58 @@ function buildDescription(localEvent) {
     return parts.join('\n');
 }
 
+/**
+ * Build a Google Calendar event resource from local event data.
+ * Shared by both insert (sync) and update so the two stay in lockstep.
+ */
+function buildGoogleEvent(localEvent) {
+    const event = {
+        summary: localEvent.title,
+        description: buildDescription(localEvent),
+        colorId: CATEGORY_COLORS[localEvent.category] || '9',
+    };
+
+    // Determine if this is an all-day event or a timed event
+    const eventDateStr = typeof localEvent.event_date === 'string'
+        ? localEvent.event_date.split('T')[0]
+        : new Date(localEvent.event_date).toISOString().split('T')[0];
+
+    if (localEvent.start_time) {
+        // Timed event — use dateTime
+        const startDateTime = new Date(`${eventDateStr}T${localEvent.start_time}:00`);
+        let endDateTime;
+
+        if (localEvent.end_time) {
+            endDateTime = new Date(`${eventDateStr}T${localEvent.end_time}:00`);
+        } else {
+            // Default 1 hour duration
+            endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+        }
+
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        event.start = { dateTime: startDateTime.toISOString(), timeZone };
+        event.end = { dateTime: endDateTime.toISOString(), timeZone };
+    } else {
+        // All-day event — use date (no time)
+        // Google Calendar requires end date to be the next day (exclusive)
+        const endDate = new Date(`${eventDateStr}T00:00:00Z`);
+        endDate.setUTCDate(endDate.getUTCDate() + 1);
+        const endDateStr = endDate.toISOString().split('T')[0];
+        event.start = { date: eventDateStr };
+        event.end = { date: endDateStr };
+    }
+
+    // Add streaming URL as source if provided
+    if (localEvent.external_url) {
+        event.source = {
+            title: 'Stream on BeatDrop',
+            url: localEvent.external_url,
+        };
+    }
+
+    return event;
+}
+
 export const syncEventToGoogle = async (userId, localEvent) => {
     try {
         const result = await query('SELECT google_access_token, google_refresh_token FROM users WHERE id = $1', [userId]);
@@ -75,55 +127,7 @@ export const syncEventToGoogle = async (userId, localEvent) => {
 
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-        // Build the event object
-        const event = {
-            summary: localEvent.title,
-            description: buildDescription(localEvent),
-            colorId: CATEGORY_COLORS[localEvent.category] || '9',
-        };
-
-        // Determine if this is an all-day event or a timed event
-        const eventDateStr = typeof localEvent.event_date === 'string'
-            ? localEvent.event_date.split('T')[0]
-            : new Date(localEvent.event_date).toISOString().split('T')[0];
-
-        if (localEvent.start_time) {
-            // Timed event — use dateTime
-            const startDateTime = new Date(`${eventDateStr}T${localEvent.start_time}:00`);
-            let endDateTime;
-
-            if (localEvent.end_time) {
-                endDateTime = new Date(`${eventDateStr}T${localEvent.end_time}:00`);
-            } else {
-                // Default 1 hour duration
-                endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
-            }
-
-            event.start = {
-                dateTime: startDateTime.toISOString(),
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-            };
-            event.end = {
-                dateTime: endDateTime.toISOString(),
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-            };
-        } else {
-            // All-day event — use date (no time)
-            // Google Calendar requires end date to be the next day (exclusive)
-            const endDate = new Date(`${eventDateStr}T00:00:00Z`);
-            endDate.setUTCDate(endDate.getUTCDate() + 1);
-            const endDateStr = endDate.toISOString().split('T')[0];
-            event.start = { date: eventDateStr };
-            event.end = { date: endDateStr };
-        }
-
-        // Add streaming URL as source if provided
-        if (localEvent.external_url) {
-            event.source = {
-                title: 'Stream on BeatDrop',
-                url: localEvent.external_url,
-            };
-        }
+        const event = buildGoogleEvent(localEvent);
 
         console.log('[Google Calendar] Syncing event:', event.summary,
             localEvent.start_time ? `at ${localEvent.start_time}` : '(all-day)',
@@ -138,6 +142,52 @@ export const syncEventToGoogle = async (userId, localEvent) => {
         return response.data.id;
     } catch (err) {
         console.error('[Google Calendar] Failed to sync:', err.message);
+        return null;
+    }
+};
+
+export const updateEventInGoogle = async (userId, googleEventId, localEvent) => {
+    if (!googleEventId) return null;
+
+    try {
+        const result = await query('SELECT google_access_token, google_refresh_token FROM users WHERE id = $1', [userId]);
+        const user = result.rows[0];
+
+        if (!user || (!user.google_access_token && !user.google_refresh_token)) {
+            return null;
+        }
+
+        const oauth2Client = getGoogleClient();
+
+        oauth2Client.on('tokens', (tokens) => {
+            if (tokens.access_token) {
+                query('UPDATE users SET google_access_token = $1, google_token_expiry = $2 WHERE id = $3', [
+                    tokens.access_token,
+                    tokens.expiry_date || null,
+                    userId
+                ]).catch(console.error);
+            }
+        });
+
+        oauth2Client.setCredentials({
+            access_token: user.google_access_token,
+            refresh_token: user.google_refresh_token ? decrypt(user.google_refresh_token) : null
+        });
+
+        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+        const event = buildGoogleEvent(localEvent);
+
+        const response = await calendar.events.update({
+            calendarId: 'primary',
+            eventId: googleEventId,
+            resource: event,
+        });
+
+        console.log('[Google Calendar] ✏️ Event updated:', response.data.id);
+        return response.data.id;
+    } catch (err) {
+        console.error('[Google Calendar] Failed to update:', err.message);
         return null;
     }
 };

@@ -1,5 +1,6 @@
 import pool, { query } from '../config/database.js';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -131,6 +132,59 @@ export const deleteAccount = async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('Error deleting account:', err);
+        res.status(500).json({ error: 'Server error during deletion' });
+    } finally {
+        client.release();
+    }
+};
+
+// POST /api/users/admin/delete
+// Admin-only deletion of a user by `id` or `email`. NOT behind the user JWT —
+// guarded by a shared ADMIN_SECRET sent in the `x-admin-secret` header. The
+// whole endpoint is disabled (404) when ADMIN_SECRET is not configured, so it
+// never exists in environments that don't opt in. Intended for cleaning up
+// test accounts; deletes the user and its dependent rows in one transaction.
+export const adminDeleteUser = async (req, res) => {
+    const secret = process.env.ADMIN_SECRET;
+    if (!secret) {
+        return res.status(404).json({ error: 'Not found' });
+    }
+
+    // Constant-time compare; mismatched lengths would throw, so guard first.
+    const provided = Buffer.from(req.get('x-admin-secret') || '');
+    const expected = Buffer.from(secret);
+    if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { id, email } = req.body || {};
+    if (!id && !email) {
+        return res.status(400).json({ error: 'Provide id or email' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const lookup = id
+            ? await client.query('SELECT id FROM users WHERE id = $1', [id])
+            : await client.query('SELECT id FROM users WHERE email = $1', [String(email).trim().toLowerCase()]);
+
+        if (lookup.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const userId = lookup.rows[0].id;
+        await client.query('DELETE FROM user_artists WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM events WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM users WHERE id = $1', [userId]);
+
+        await client.query('COMMIT');
+        res.json({ message: 'User deleted', id: userId });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error in admin delete user:', err);
         res.status(500).json({ error: 'Server error during deletion' });
     } finally {
         client.release();

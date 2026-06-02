@@ -1,5 +1,5 @@
 import { query } from '../config/database.js';
-import { syncEventToGoogle, deleteEventFromGoogle } from '../services/googleCalendar.js';
+import { syncEventToGoogle, updateEventInGoogle, deleteEventFromGoogle } from '../services/googleCalendar.js';
 import { clearCachePrefix } from '../middleware/cacheMiddleware.js';
 
 // Get all events for the logged-in user
@@ -111,10 +111,11 @@ export const updateEvent = async (req, res) => {
         const { title, event_date, description, category, external_url, artist_ids, start_time, end_time } = req.body;
 
         // IDOR check
-        const existing = await query('SELECT id FROM events WHERE id = $1 AND user_id = $2', [eventId, userId]);
+        const existing = await query('SELECT id, google_calendar_event_id FROM events WHERE id = $1 AND user_id = $2', [eventId, userId]);
         if (existing.rows.length === 0) {
             return res.status(404).json({ error: 'Event not found or you do not have permission to update it' });
         }
+        const googleEventId = existing.rows[0].google_calendar_event_id;
 
         await query(
             `UPDATE events SET title=$1, event_date=$2, description=$3, category=$4,
@@ -149,6 +150,30 @@ export const updateEvent = async (req, res) => {
         const finalResult = await query(fetchSql, [eventId]);
 
         clearCachePrefix(userId, '/api/events');
+
+        // Re-sync to Google Calendar so the remote copy reflects the edit.
+        const artistNamesRes = await query(
+            'SELECT a.name FROM artists a JOIN event_artists ea ON a.id = ea.artist_id WHERE ea.event_id = $1',
+            [eventId]
+        );
+        const eventForGoogle = {
+            title, event_date, description, category, external_url,
+            start_time: start_time || null,
+            end_time: end_time || null,
+            artist_names: artistNamesRes.rows.map(r => r.name)
+        };
+        if (googleEventId) {
+            updateEventInGoogle(userId, googleEventId, eventForGoogle)
+                .catch(err => console.error('Error in async Google Calendar update:', err));
+        } else {
+            // No remote copy yet — create one if the user has Google linked.
+            syncEventToGoogle(userId, eventForGoogle).then(newId => {
+                if (newId) {
+                    query('UPDATE events SET google_calendar_event_id = $1 WHERE id = $2', [newId, eventId])
+                        .catch(err => console.error('Failed to update event with Google ID:', err));
+                }
+            }).catch(err => console.error('Error in async Google Calendar sync:', err));
+        }
 
         res.json(finalResult.rows[0]);
     } catch (err) {

@@ -11,9 +11,9 @@ router.use(authenticateToken);
 
 // OWASP #3: Input Validation & XSS Defense Middleware
 const validateEventPost = [
-    body('title').trim().isLength({ min: 1, max: 255 }).withMessage('Valid title is required (1-255 chars)').escape(),
+    body('title').trim().isLength({ min: 1, max: 255 }).withMessage('Valid title is required (1-255 chars)'),
     body('event_date').trim().notEmpty().withMessage('Valid date is required'),
-    body('description').optional({ checkFalsy: true }).trim().isLength({ max: 2000 }).withMessage('Description max 2000 chars').escape(),
+    body('description').optional({ checkFalsy: true }).trim().isLength({ max: 2000 }).withMessage('Description max 2000 chars'),
     body('category').optional({ checkFalsy: true }).trim().isIn(['Album Drop', 'Single', 'Concert', 'Listening Party', 'Miscellaneous']).withMessage('Invalid category'),
     body('external_url').optional({ checkFalsy: true }).isURL().withMessage('Must be a valid URL'),
     body('artist_ids').optional().isArray(),

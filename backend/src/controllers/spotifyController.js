@@ -9,6 +9,10 @@ async function getClientCredentialsToken() {
         return cachedToken;
     }
 
+    if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+        throw new Error('Spotify credentials are not configured');
+    }
+
     const response = await axios.post(
         'https://accounts.spotify.com/api/token',
         new URLSearchParams({ grant_type: 'client_credentials' }).toString(),

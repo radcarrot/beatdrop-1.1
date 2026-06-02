@@ -4,7 +4,6 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { query } from './src/config/database.js';
 import artistsRouter from './src/routes/artists.js';
 import authRouter from './src/routes/auth.js';
 import eventsRouter from './src/routes/events.js';
@@ -51,9 +50,8 @@ app.use('/api/events', eventsRouter);
 app.use('/api/spotify', spotifyRouter);
 app.use('/api/users', usersRouter);
 
-
-// Migrate profile_image_url to TEXT to support base64 data URLs
-query(`ALTER TABLE users ALTER COLUMN profile_image_url TYPE TEXT`).catch(() => {});
+// NOTE: schema migrations live in src/scripts/ (e.g. migrate-profile-image.js),
+// not here. Running ALTER TABLE on every cold start was removed.
 
 const PORT = process.env.PORT || 5000;
 if (process.env.NODE_ENV !== 'test') {

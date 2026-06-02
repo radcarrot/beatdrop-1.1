@@ -1,6 +1,6 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { getProfile, updatePreferences, updatePassword, deleteAccount, uploadProfileImage } from '../controllers/usersController.js';
+import { getProfile, updatePreferences, updatePassword, deleteAccount, uploadProfileImage, adminDeleteUser } from '../controllers/usersController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import multer from 'multer';
 
@@ -42,7 +42,11 @@ const validatePassword = [
     handleValidationErrors
 ];
 
-// Both routes require authentication
+// Admin user deletion — guarded by ADMIN_SECRET header, NOT the user JWT, so
+// it is registered before the authenticateToken gate below.
+router.post('/admin/delete', adminDeleteUser);
+
+// All routes below require user authentication
 router.use(authenticateToken);
 
 router.get('/profile', getProfile);

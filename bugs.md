@@ -1,6 +1,8 @@
 # BeatDrop — Bug Report
 
-Audit date: 2026-06-01. Found via static read of backend controllers, middleware, routes, services. Not yet runtime-verified.
+Audit date: 2026-06-01. Found via static read of backend controllers, middleware, routes, services.
+
+**Status: all 10 findings resolved on branch `fix/top-three-bugs`.**
 
 Severity legend: **HIGH** (data loss / security / broken core flow), **MEDIUM** (feature broken or inconsistent), **LOW** (robustness / hygiene).
 

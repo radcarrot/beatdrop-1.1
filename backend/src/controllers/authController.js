@@ -32,15 +32,24 @@ const REFRESH_COOKIE_OPTIONS = {
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 
+// Shared options for the short-lived oauth_state cookie. clearCookie must be
+// called with the same flags or the cookie won't be removed in production.
+const OAUTH_STATE_OPTIONS = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+};
+
 /**
  * Register a new user
  */
 export const register = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        if (!name || !email || !password) {
+        const { name, email: rawEmail, password } = req.body;
+        if (!name || !rawEmail || !password) {
             return res.status(400).json({ error: 'All fields are required' });
         }
+        const email = rawEmail.trim().toLowerCase();
 
         const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
         if (!passwordRegex.test(password)) {
@@ -87,8 +96,9 @@ export const register = async (req, res) => {
  */
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+        const { email: rawEmail, password } = req.body;
+        if (!rawEmail || !password) return res.status(400).json({ error: 'Email and password required' });
+        const email = rawEmail.trim().toLowerCase();
 
         // Find user
         const result = await query('SELECT * FROM users WHERE email = $1', [email]);
@@ -104,14 +114,18 @@ export const login = async (req, res) => {
         // Check password
         const valid = await bcrypt.compare(password, user.password_hash);
         if (!valid) {
-            let failedAttempts = (user.failed_login_attempts || 0) + 1;
-            let lockedUntil = null;
+            // If a previous lock has already expired, start a fresh attempt
+            // window instead of counting on top of the stale (>=5) value —
+            // otherwise the next wrong password instantly re-locks the account.
+            const lockExpired = user.locked_until && new Date(user.locked_until) <= new Date();
+            const priorAttempts = lockExpired ? 0 : (user.failed_login_attempts || 0);
+            let failedAttempts = priorAttempts + 1;
             if (failedAttempts >= 5) {
-                lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 mins lock
+                const lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 mins lock
                 await query('UPDATE users SET failed_login_attempts = $1, locked_until = $2 WHERE id = $3', [failedAttempts, lockedUntil, user.id]);
                 return res.status(403).json({ error: 'Account locked due to too many failed attempts. Please try again later.' });
             } else {
-                await query('UPDATE users SET failed_login_attempts = $1 WHERE id = $2', [failedAttempts, user.id]);
+                await query('UPDATE users SET failed_login_attempts = $1, locked_until = NULL WHERE id = $2', [failedAttempts, user.id]);
                 return res.status(400).json({ error: 'Invalid credentials' });
             }
         }
@@ -164,9 +178,16 @@ export const refresh = async (req, res) => {
 
         if (!user) return res.status(403).json({ error: 'Invalid refresh token' });
 
+        // Rotate the refresh token on use: mint a new one, persist it (which
+        // invalidates the old one), and re-set the cookie. A stolen refresh
+        // token is then good for one use only, not its full 7-day life.
+        const newRefreshToken = jwt.sign({ tempId: crypto.randomBytes(16).toString('hex') }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        await query('UPDATE users SET refresh_token = $1 WHERE id = $2', [newRefreshToken, user.id]);
+
         // Issue new access token
         const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
         res.cookie('jwt', token, COOKIE_OPTIONS);
+        res.cookie('refreshToken', newRefreshToken, REFRESH_COOKIE_OPTIONS);
         res.status(200).json({ message: 'Token refreshed' });
     } catch (err) {
         console.error('Error refreshing token:', err);
@@ -214,7 +235,7 @@ export const googleAuth = (req, res) => {
 
     // Generate a secure random state string
     const state = crypto.randomBytes(32).toString('hex');
-    res.cookie('oauth_state', state, { httpOnly: true, secure: isProduction, sameSite: isProduction ? 'none' : 'lax', maxAge: 15 * 60 * 1000 });
+    res.cookie('oauth_state', state, { ...OAUTH_STATE_OPTIONS, maxAge: 15 * 60 * 1000 });
 
     const url = oauth2Client.generateAuthUrl({
         access_type: 'offline', // Requests refresh_token
@@ -248,7 +269,7 @@ export const googleCallback = async (req, res) => {
             console.error('[Google] State mismatch! URL state:', !!state, 'Cookie state:', !!savedState);
             return res.status(403).json({ error: 'Invalid state parameter' });
         }
-        res.clearCookie('oauth_state');
+        res.clearCookie('oauth_state', OAUTH_STATE_OPTIONS);
 
         if (!code) {
             return res.status(400).json({ error: 'Missing authorization code' });
@@ -261,7 +282,8 @@ export const googleCallback = async (req, res) => {
         // Fetch User Profile from Google
         const oauth2 = google.oauth2({ auth: oauth2Client, version: 'v2' });
         const userInfo = await oauth2.userinfo.get();
-        const { email, name: googleName, picture: googlePicture } = userInfo.data;
+        const { email: rawGoogleEmail, name: googleName, picture: googlePicture } = userInfo.data;
+        const email = rawGoogleEmail ? rawGoogleEmail.trim().toLowerCase() : rawGoogleEmail;
 
         // Encrypt refresh token (defensively in case Google omits it on recurring logins)
         const encryptedRefreshToken = tokens.refresh_token ? encrypt(tokens.refresh_token) : null;

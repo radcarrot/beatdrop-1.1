@@ -12,7 +12,7 @@ import usersRouter from './src/routes/users.js';
 
 const app = express();
 
-// Trust reverse proxy (Railway uses ngrok/envoy so rate limiter needs true IPs)
+// Trust reverse proxy (Vercel sits in front, so the rate limiter needs true client IPs)
 app.set('trust proxy', 1);
 
 // Security Headers (OWASP #5)

@@ -99,33 +99,43 @@ function buildGoogleEvent(localEvent) {
     return event;
 }
 
+/**
+ * Build an authenticated Google Calendar client for a user, or return null if
+ * the user has no stored Google credentials. Refreshed access tokens are
+ * persisted back to the users row via the 'tokens' event.
+ */
+async function getAuthedCalendar(userId) {
+    const result = await query('SELECT google_access_token, google_refresh_token FROM users WHERE id = $1', [userId]);
+    const user = result.rows[0];
+
+    if (!user || (!user.google_access_token && !user.google_refresh_token)) {
+        return null;
+    }
+
+    const oauth2Client = getGoogleClient();
+
+    oauth2Client.on('tokens', (tokens) => {
+        if (tokens.access_token) {
+            query('UPDATE users SET google_access_token = $1, google_token_expiry = $2 WHERE id = $3', [
+                tokens.access_token,
+                tokens.expiry_date || null,
+                userId
+            ]).catch(console.error);
+        }
+    });
+
+    oauth2Client.setCredentials({
+        access_token: user.google_access_token,
+        refresh_token: user.google_refresh_token ? decrypt(user.google_refresh_token) : null
+    });
+
+    return google.calendar({ version: 'v3', auth: oauth2Client });
+}
+
 export const syncEventToGoogle = async (userId, localEvent) => {
     try {
-        const result = await query('SELECT google_access_token, google_refresh_token FROM users WHERE id = $1', [userId]);
-        const user = result.rows[0];
-
-        if (!user || (!user.google_access_token && !user.google_refresh_token)) {
-            return null;
-        }
-
-        const oauth2Client = getGoogleClient();
-
-        oauth2Client.on('tokens', (tokens) => {
-            if (tokens.access_token) {
-                query('UPDATE users SET google_access_token = $1, google_token_expiry = $2 WHERE id = $3', [
-                    tokens.access_token,
-                    tokens.expiry_date || null,
-                    userId
-                ]).catch(console.error);
-            }
-        });
-
-        oauth2Client.setCredentials({
-            access_token: user.google_access_token,
-            refresh_token: user.google_refresh_token ? decrypt(user.google_refresh_token) : null
-        });
-
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = await getAuthedCalendar(userId);
+        if (!calendar) return null;
 
         const event = buildGoogleEvent(localEvent);
 
@@ -150,31 +160,8 @@ export const updateEventInGoogle = async (userId, googleEventId, localEvent) => 
     if (!googleEventId) return null;
 
     try {
-        const result = await query('SELECT google_access_token, google_refresh_token FROM users WHERE id = $1', [userId]);
-        const user = result.rows[0];
-
-        if (!user || (!user.google_access_token && !user.google_refresh_token)) {
-            return null;
-        }
-
-        const oauth2Client = getGoogleClient();
-
-        oauth2Client.on('tokens', (tokens) => {
-            if (tokens.access_token) {
-                query('UPDATE users SET google_access_token = $1, google_token_expiry = $2 WHERE id = $3', [
-                    tokens.access_token,
-                    tokens.expiry_date || null,
-                    userId
-                ]).catch(console.error);
-            }
-        });
-
-        oauth2Client.setCredentials({
-            access_token: user.google_access_token,
-            refresh_token: user.google_refresh_token ? decrypt(user.google_refresh_token) : null
-        });
-
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = await getAuthedCalendar(userId);
+        if (!calendar) return null;
 
         const event = buildGoogleEvent(localEvent);
 
@@ -196,18 +183,8 @@ export const deleteEventFromGoogle = async (userId, googleEventId) => {
     if (!googleEventId) return;
 
     try {
-        const result = await query('SELECT google_access_token, google_refresh_token FROM users WHERE id = $1', [userId]);
-        const user = result.rows[0];
-
-        if (!user || (!user.google_access_token && !user.google_refresh_token)) return;
-
-        const oauth2Client = getGoogleClient();
-        oauth2Client.setCredentials({
-            access_token: user.google_access_token,
-            refresh_token: user.google_refresh_token ? decrypt(user.google_refresh_token) : null
-        });
-
-        const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+        const calendar = await getAuthedCalendar(userId);
+        if (!calendar) return;
 
         await calendar.events.delete({
             calendarId: 'primary',

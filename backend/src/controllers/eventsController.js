@@ -2,22 +2,27 @@ import { query } from '../config/database.js';
 import { syncEventToGoogle, updateEventInGoogle, deleteEventFromGoogle } from '../services/googleCalendar.js';
 import { clearCachePrefix } from '../middleware/cacheMiddleware.js';
 
+// Shared projection: an event row plus its aggregated artists. Callers append
+// their own WHERE / GROUP BY / ORDER BY so the column list stays in one place.
+const EVENT_WITH_ARTISTS_SELECT = `
+    SELECT e.id, e.user_id, e.title, TO_CHAR(e.event_date, 'YYYY-MM-DD') as event_date,
+           e.start_time::text, e.end_time::text,
+           e.description, e.category, e.external_url, e.google_calendar_event_id, e.created_at,
+           COALESCE(json_agg(json_build_object('id', a.id, 'name', a.name, 'image_url', a.image_url)) FILTER (WHERE a.id IS NOT NULL), '[]') as artists
+    FROM events e
+    LEFT JOIN event_artists ea ON e.id = ea.event_id
+    LEFT JOIN artists a ON ea.artist_id = a.id
+`;
+
+// Fetch a single event (with artists) by id — used after create/update.
+const fetchEventWithArtists = (eventId) =>
+    query(`${EVENT_WITH_ARTISTS_SELECT} WHERE e.id = $1 GROUP BY e.id`, [eventId]);
+
 // Get all events for the logged-in user
 export const getEvents = async (req, res) => {
     try {
         const userId = req.user.id;
-        const sql = `
-            SELECT e.id, e.user_id, e.title, TO_CHAR(e.event_date, 'YYYY-MM-DD') as event_date,
-                   e.start_time::text, e.end_time::text,
-                   e.description, e.category, e.external_url, e.google_calendar_event_id, e.created_at, 
-                   COALESCE(json_agg(json_build_object('id', a.id, 'name', a.name, 'image_url', a.image_url)) FILTER (WHERE a.id IS NOT NULL), '[]') as artists
-            FROM events e
-            LEFT JOIN event_artists ea ON e.id = ea.event_id
-            LEFT JOIN artists a ON ea.artist_id = a.id
-            WHERE e.user_id = $1
-            GROUP BY e.id
-            ORDER BY e.event_date ASC
-        `;
+        const sql = `${EVENT_WITH_ARTISTS_SELECT} WHERE e.user_id = $1 GROUP BY e.id ORDER BY e.event_date ASC`;
         const result = await query(sql, [userId]);
         res.json(result.rows);
     } catch (err) {
@@ -80,18 +85,7 @@ export const createEvent = async (req, res) => {
         }
 
         // Fetch the inserted event with its artists
-        const fetchSql = `
-            SELECT e.id, e.user_id, e.title, TO_CHAR(e.event_date, 'YYYY-MM-DD') as event_date,
-                   e.start_time::text, e.end_time::text,
-                   e.description, e.category, e.external_url, e.google_calendar_event_id, e.created_at, 
-                   COALESCE(json_agg(json_build_object('id', a.id, 'name', a.name, 'image_url', a.image_url)) FILTER (WHERE a.id IS NOT NULL), '[]') as artists
-            FROM events e
-            LEFT JOIN event_artists ea ON e.id = ea.event_id
-            LEFT JOIN artists a ON ea.artist_id = a.id
-            WHERE e.id = $1
-            GROUP BY e.id
-        `;
-        const finalResult = await query(fetchSql, [newEvent.id]);
+        const finalResult = await fetchEventWithArtists(newEvent.id);
 
         // Invalidate the events cache for this user since a new one was added
         clearCachePrefix(userId, '/api/events');
@@ -136,18 +130,7 @@ export const updateEvent = async (req, res) => {
         }
 
         // Fetch updated event with artists
-        const fetchSql = `
-            SELECT e.id, e.user_id, e.title, TO_CHAR(e.event_date, 'YYYY-MM-DD') as event_date,
-                   e.start_time::text, e.end_time::text,
-                   e.description, e.category, e.external_url, e.google_calendar_event_id, e.created_at,
-                   COALESCE(json_agg(json_build_object('id', a.id, 'name', a.name, 'image_url', a.image_url)) FILTER (WHERE a.id IS NOT NULL), '[]') as artists
-            FROM events e
-            LEFT JOIN event_artists ea ON e.id = ea.event_id
-            LEFT JOIN artists a ON ea.artist_id = a.id
-            WHERE e.id = $1
-            GROUP BY e.id
-        `;
-        const finalResult = await query(fetchSql, [eventId]);
+        const finalResult = await fetchEventWithArtists(eventId);
 
         clearCachePrefix(userId, '/api/events');
 

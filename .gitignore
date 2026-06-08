@@ -11,4 +11,22 @@ foragent/
 .claude/
 .omc/
 CLAUDE.md
+
+# agent/context docs — keep local, never commit
 AGENTS.md
+google-oauth-production.md
+bugs.md
+
+# runtime user uploads (ephemeral on Vercel — never commit)
+backend/uploads/
+
+# logs, test outputs, debug dumps
+*.log
+*_log.txt
+jest_err.txt
+jest_output.txt
+test_output*.json
+test_events_output*.json
+test_results.txt
+spotify_debug_log.json
+build_log.txt

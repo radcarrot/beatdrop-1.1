@@ -123,7 +123,9 @@ const Landing = () => {
                         <div className="ribbon">NEW_SIGNAL</div>
                         <div className="bd-tag" style={{ marginBottom: 18 }}>INCOMING · 02:44:11</div>
                         <div className="pv-row">
-                            <div className="bd-ph pv-art" data-ph="ART" />
+                            <img className="pv-art" alt="Kiss Land album cover by The Weeknd"
+                                src="https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/1b/fe/ea/1bfeea22-0fd6-a2af-afa1-1db7ff9838e7/13UAAIM69536.rgb.jpg/600x600bb.jpg"
+                                style={{ objectFit: 'cover', borderRadius: 'var(--r-sm)', border: '1px solid var(--bd-line)' }} />
                             <div style={{ flex: 1 }}>
                                 <span className="bd-badge bd-cat-album"><span className="bd-dot" />Album</span>
                                 <h3 className="bd-h3" style={{ margin: '12px 0 4px' }}>Kiss Land · Anniversary</h3>

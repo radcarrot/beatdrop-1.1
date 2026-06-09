@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import Atmosphere from '../components/Atmosphere';
 
-const BeatDropLogo = () => (
-    <svg className="w-9 h-9 text-primary drop-shadow-[0_0_8px_rgba(89,242,13,0.8)]"
-        fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+const Logo = ({ size = 24 }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" width={size} height={size}>
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9c.83 0 1.5-.67 1.5-1.5S7.83 8 7 8s-1.5.67-1.5 1.5S6.17 11 7 11zm10 0c.83 0 1.5-.67 1.5-1.5S17.83 8 17 8s-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-5 4c2.5 0 4.5-1.5 5.5-3.5h-11c1 2 3 3.5 5.5 3.5z" />
     </svg>
 );
@@ -14,249 +12,179 @@ const Landing = () => {
     const [menuOpen, setMenuOpen] = useState(false);
 
     return (
-        <div className="min-h-screen flex flex-col relative bg-background-dark text-slate-100 font-display overflow-x-hidden">
-            {/* Background elements */}
-            <div className="fixed inset-0 pointer-events-none bg-noise z-50"></div>
-            <div className="fixed inset-0 pointer-events-none scanline-overlay z-40 opacity-30"></div>
+        <div className="ld">
+            <style>{`
+                .ld{background:var(--bd-bg);color:var(--bd-text);font-family:var(--font-display);min-height:100vh;position:relative;overflow-x:hidden}
+                .ld a{color:inherit}
+                .ld .wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+                .ld .nav{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:18px 32px;border-bottom:1px solid var(--bd-line);background:rgba(7,11,8,.7);backdrop-filter:blur(12px)}
+                .ld .nav .brand{display:flex;align-items:center;gap:11px}
+                .ld .nav .brand svg{color:var(--bd-signal);filter:drop-shadow(0 0 7px var(--bd-glow))}
+                .ld .nav .brand b{letter-spacing:.28em;font-size:16px}
+                .ld .nav-links{display:flex;gap:28px;align-items:center}
+                .ld .nav-links a{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--bd-muted)}
+                .ld .nav-links a:hover{color:var(--bd-text)}
+                .ld .burger{display:none;background:none;border:0;color:var(--bd-signal);cursor:pointer;padding:4px}
+                .ld .mobile-menu{display:none;flex-direction:column;gap:12px;padding:18px 32px;border-bottom:1px solid var(--bd-line);background:rgba(7,11,8,.96)}
+                .ld .mobile-menu a{font-family:var(--font-mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--bd-muted)}
 
-            {/* Header */}
-            <header className="fixed top-0 w-full z-50 bg-background-dark/90 backdrop-blur-xl border-b border-primary/10">
-                <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
-                    <div className="flex items-center justify-between h-16 md:h-20">
-                        {/* Logo */}
-                        <Link to="/" className="flex items-center gap-3">
-                            <BeatDropLogo />
-                            <span className="text-white text-lg md:text-2xl font-black tracking-[0.2em] uppercase neon-text-strong">BeatDrop</span>
-                        </Link>
+                .ld .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--bd-line)}
+                .ld .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;padding:96px 0 104px}
+                .ld .hero h1{font-size:clamp(48px,8vw,92px);font-weight:700;line-height:.9;letter-spacing:-.04em;font-style:italic}
+                .ld .pill{display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border:1px solid var(--bd-line-2);border-radius:var(--r-sm);background:rgba(var(--bd-signal-rgb),.05);margin-bottom:28px}
+                .ld .pill .d{width:7px;height:7px;border-radius:50%;background:var(--bd-signal);box-shadow:0 0 8px var(--bd-glow);animation:bd-blink 1.6s infinite}
+                .ld .stat-num{font-size:26px;font-weight:700}
+                .ld .preview{position:relative;background:var(--bd-surface);border:1px solid var(--bd-line-2);border-radius:var(--r-md);padding:22px;box-shadow:0 0 60px rgba(var(--bd-signal-rgb),.08),0 30px 80px rgba(0,0,0,.6)}
+                .ld .preview .ribbon{position:absolute;top:0;right:0;background:var(--bd-signal);color:#04130a;font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.12em;padding:4px 10px}
+                .ld .pv-row{display:flex;gap:14px}
+                .ld .pv-art{width:96px;height:96px;flex:0 0 auto}
+                .ld .pv-meter{display:flex;gap:4px;margin-top:12px}
+                .ld .pv-meter i{height:4px;border-radius:1px;background:var(--bd-elevated)}
+                .ld .pv-meter i.on{background:var(--bd-signal);box-shadow:0 0 6px var(--bd-glow)}
 
-                        {/* Desktop Nav */}
-                        <nav className="hidden lg:flex items-center gap-10">
-                            <a className="text-slate-400 hover:text-primary transition-all text-xs font-bold uppercase tracking-[0.3em]"
-                                href="#features">Features</a>
-                        </nav>
+                .ld .sec{padding:88px 0;border-bottom:1px solid var(--bd-line)}
+                .ld .sec-head{margin-bottom:48px}
+                .ld .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+                .ld .step{background:var(--bd-surface);border:1px solid var(--bd-line);border-radius:var(--r-md);padding:30px;position:relative}
+                .ld .step .no{font-family:var(--font-mono);font-size:13px;color:var(--bd-signal-dim);letter-spacing:.2em;margin-bottom:20px}
+                .ld .step h3{font-size:21px;font-weight:600;margin-bottom:10px}
+                .ld .step p{color:var(--bd-muted);font-size:15px}
+                .ld .feat{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+                .ld .fcard{background:var(--bd-surface);border:1px solid var(--bd-line);border-radius:var(--r-md);padding:30px;display:flex;gap:20px;align-items:flex-start;transition:border-color .2s}
+                .ld .fcard:hover{border-color:var(--bd-line-2)}
+                .ld .fcard .ic{width:42px;height:42px;flex:0 0 auto;border:1px solid var(--bd-line-2);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:var(--bd-signal)}
+                .ld .fcard h4{font-size:17px;font-weight:600;margin-bottom:7px}
+                .ld .fcard p{color:var(--bd-muted);font-size:14px}
+                .ld .cta{position:relative;overflow:hidden;text-align:center;padding:104px 0}
+                .ld .cta h2{font-size:clamp(34px,5vw,58px);font-weight:700;letter-spacing:-.03em;font-style:italic}
+                .ld footer.pagefoot{padding:40px 0;text-align:center}
 
-                        {/* Desktop Auth Buttons */}
-                        <div className="hidden md:flex items-center gap-6">
-                            <Link to="/login"
-                                className="text-slate-300 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">Log In</Link>
-                            <Button asChild
-                                className="bg-primary text-black px-8 py-2.5 rounded-sm text-xs font-black uppercase tracking-[0.2em] neon-button transition-all hover:bg-primary/90 h-auto">
-                                <Link to="/register">Sign Up</Link>
-                            </Button>
+                @media(max-width:880px){
+                  .ld .hero-grid{grid-template-columns:1fr;padding:64px 0}
+                  .ld .steps{grid-template-columns:1fr}
+                  .ld .feat{grid-template-columns:1fr}
+                  .ld .nav-links{display:none}
+                  .ld .burger{display:block}
+                  .ld .mobile-menu{display:flex}
+                }
+            `}</style>
+
+            <Atmosphere />
+
+            <nav className="nav">
+                <Link to="/" className="brand"><Logo /><b>BEATDROP</b></Link>
+                <div className="nav-links">
+                    <a href="#how">How it works</a>
+                    <a href="#feat">Features</a>
+                    <Link to="/login">Log in</Link>
+                    <Link to="/register" className="bd-btn bd-btn--primary bd-btn--sm">Start tracking</Link>
+                </div>
+                <button className="burger" onClick={() => setMenuOpen(o => !o)} aria-label="Toggle menu">
+                    <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        {menuOpen
+                            ? <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
+                            : <path strokeLinecap="round" d="M4 8h16M4 16h16" />}
+                    </svg>
+                </button>
+            </nav>
+            {menuOpen && (
+                <div className="mobile-menu">
+                    <a href="#how" onClick={() => setMenuOpen(false)}>How it works</a>
+                    <a href="#feat" onClick={() => setMenuOpen(false)}>Features</a>
+                    <Link to="/login" onClick={() => setMenuOpen(false)}>Log in</Link>
+                    <Link to="/register" className="bd-btn bd-btn--primary bd-btn--sm" onClick={() => setMenuOpen(false)}>Start tracking</Link>
+                </div>
+            )}
+
+            {/* HERO */}
+            <header className="hero">
+                <div className="bd-haze" style={{ width: 760, height: 760, top: -340, left: -160 }} />
+                <div className="bd-haze" style={{ width: 520, height: 520, bottom: -280, right: -60, opacity: .45 }} />
+                <div className="wrap hero-grid">
+                    <div>
+                        <div className="pill"><span className="d" /><span className="bd-mono" style={{ fontSize: 11, letterSpacing: '.16em', color: 'var(--bd-signal)' }}>SYSTEM STATUS · ONLINE</span></div>
+                        <h1>TRACK<br />EVERY<br /><span className="neon-text">DROP</span><span className="bd-caret" style={{ height: '.8em' }} /></h1>
+                        <p className="bd-body" style={{ color: 'var(--bd-muted)', maxWidth: '46ch', margin: '28px 0 36px' }}>
+                            Your release radar for the underground and the mainstream. Tell BeatDrop which artists matter —
+                            it maps every drop, show and session into one calendar, and syncs it to your real one.
+                        </p>
+                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                            <Link to="/register" className="bd-btn bd-btn--primary">Start tracking</Link>
+                            <Link to="/login" className="bd-btn bd-btn--ghost">See the radar</Link>
                         </div>
+                        <div style={{ display: 'flex', gap: 30, marginTop: 44 }}>
+                            <div><div className="bd-mono-num neon-text stat-num">12K+</div><div className="bd-label" style={{ marginTop: 4 }}>ARTISTS INDEXED</div></div>
+                            <div><div className="bd-mono-num neon-text stat-num">98.6%</div><div className="bd-label" style={{ marginTop: 4 }}>DROP ACCURACY</div></div>
+                            <div><div className="bd-mono-num neon-text stat-num">0</div><div className="bd-label" style={{ marginTop: 4 }}>MISSED RELEASES</div></div>
+                        </div>
+                    </div>
 
-                        {/* Mobile Hamburger */}
-                        <button
-                            onClick={() => setMenuOpen(!menuOpen)}
-                            className="md:hidden text-primary p-1 focus:outline-none"
-                            aria-label="Toggle menu">
-                            {menuOpen ? (
-                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            ) : (
-                                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                                </svg>
-                            )}
-                        </button>
+                    <div className="preview">
+                        <div className="ribbon">NEW_SIGNAL</div>
+                        <div className="bd-tag" style={{ marginBottom: 18 }}>INCOMING · 02:44:11</div>
+                        <div className="pv-row">
+                            <div className="bd-ph pv-art" data-ph="ART" />
+                            <div style={{ flex: 1 }}>
+                                <span className="bd-badge bd-cat-album"><span className="bd-dot" />Album</span>
+                                <h3 className="bd-h3" style={{ margin: '12px 0 4px' }}>Kiss Land · Anniversary</h3>
+                                <p className="bd-mono" style={{ fontSize: 12, color: 'var(--bd-muted)' }}>THE WEEKND</p>
+                                <div className="pv-meter">
+                                    <i className="on" style={{ width: 34 }} /><i className="on" style={{ width: 18 }} /><i style={{ width: 14 }} /><i style={{ width: 22 }} /><i style={{ width: 10 }} />
+                                </div>
+                            </div>
+                        </div>
+                        <hr className="bd-hair" style={{ margin: '20px 0' }} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span className="bd-mono" style={{ fontSize: 11, color: 'var(--bd-dim)' }}>SYNCED · GOOGLE CALENDAR</span>
+                            <span className="bd-mono neon-text" style={{ fontSize: 13 }}>17 OCT · 00:00</span>
+                        </div>
                     </div>
                 </div>
-
-                {/* Mobile Menu Dropdown */}
-                {menuOpen && (
-                    <div className="md:hidden border-t border-primary/10 bg-background-dark/98 backdrop-blur-xl px-6 py-6 flex flex-col gap-4">
-                        <a className="text-slate-400 hover:text-primary transition-all text-xs font-bold uppercase tracking-[0.3em] py-2"
-                            href="#features" onClick={() => setMenuOpen(false)}>Features</a>
-                        <div className="border-t border-white/5 pt-4 flex flex-col gap-3">
-                            <Button asChild
-                                className="bg-primary text-black w-full py-4 rounded-sm text-xs font-black uppercase tracking-[0.2em] neon-button h-auto">
-                                <Link to="/register" onClick={() => setMenuOpen(false)}>Sign Up</Link>
-                            </Button>
-                            <Button asChild variant="outline"
-                                className="border border-white/10 text-white w-full py-4 rounded-sm text-xs font-black uppercase tracking-[0.2em] bg-white/5 h-auto">
-                                <Link to="/login" onClick={() => setMenuOpen(false)}>Log In</Link>
-                            </Button>
-                        </div>
-                    </div>
-                )}
             </header>
 
-            <main className="flex-grow pt-16 md:pt-20">
-                {/* Hero Section */}
-                <section className="relative min-h-[calc(100vh-64px)] md:min-h-[calc(100vh-80px)] flex items-center justify-center overflow-hidden section-fade-bottom">
-                    <div className="absolute inset-0 z-0">
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background-dark/40 to-background-dark z-10"></div>
-                        <div className="absolute inset-0 bg-background-dark/60 z-10"></div>
-                        <img alt="Cityscape" className="w-full h-full object-cover opacity-50"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKIjEF-JzZudqTfmKXO-x56uMkFhcf0Q9mJocWLXUA1iPgw_XH80mcWc60CTXeMTpUiZ8ima4oFW_8VfU7Ar9CTXFEM5a7bZn-buQy8oDg5uB3sBYsqxF_9PF4hoTC8Cta8E103TU8roWwRwP1xgVtb8T8uHB1Or2eO2BD3XcaCuSgmrasZ9aI1bfngzHsJsUHB0ZFeDTkI95mLS3QqVGblxRKlEzmnLzsfKeeVE8rF6TjGpdfnMtVPF61x5qljPjMTUT_jHJeDHip" />
+            {/* HOW */}
+            <section className="sec" id="how">
+                <div className="wrap">
+                    <div className="sec-head">
+                        <div className="bd-tag" style={{ marginBottom: 16 }}>PROTOCOL</div>
+                        <h2 className="bd-h1" style={{ maxWidth: '18ch' }}>Three steps from noise to signal.</h2>
                     </div>
-
-                    <div className="relative z-20 max-w-[1440px] mx-auto px-6 lg:px-12 w-full flex flex-col lg:flex-row items-center gap-10 lg:gap-16 py-16 md:py-20">
-                        {/* Hero Text */}
-                        <div className="flex-1 text-left space-y-6 md:space-y-10 w-full">
-                            {/* Mobile status badge */}
-                            <div className="inline-flex md:hidden items-center px-3 py-1 border border-primary/30 bg-primary/5">
-                                <span className="text-[10px] font-mono text-primary uppercase tracking-[0.2em]">System Status: Online</span>
-                            </div>
-
-                            <h1 className="text-5xl sm:text-6xl md:text-8xl font-black leading-none tracking-tighter text-white uppercase">
-                                TRACK EVERY <br />
-                                <span className="text-primary neon-text-hero italic">DROP.</span>
-                            </h1>
-
-                            <p className="text-sm md:text-lg text-slate-400 max-w-lg font-light tracking-wide">
-                                Synchronized alerts for the sonic elite. Stay connected to the green glow.
-                            </p>
-
-                            {/* CTA Buttons — stacked on mobile, row on desktop */}
-                            <div className="flex flex-col sm:flex-row gap-4 pt-2 md:pt-4 w-full sm:w-auto">
-                                <Button asChild
-                                    className="bg-primary hover:bg-primary/90 text-black w-full sm:w-auto px-10 py-5 md:py-7 rounded-sm text-sm font-black uppercase tracking-[0.25em] neon-button transition-all flex items-center justify-center gap-3 group h-auto">
-                                    <Link to="/register">
-                                        Sign Up
-                                        <span className="material-symbols-outlined group-hover:translate-x-2 transition-transform">arrow_right_alt</span>
-                                    </Link>
-                                </Button>
-                                <Button asChild variant="outline"
-                                    className="border border-white/10 hover:border-primary/50 text-white w-full sm:w-auto px-10 py-5 md:py-7 rounded-sm text-sm font-black uppercase tracking-[0.25em] bg-white/5 backdrop-blur-md transition-all hover:bg-transparent hover:text-white h-auto">
-                                    <Link to="/login">Log In</Link>
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Release Card Preview */}
-                        <div className="flex-1 w-full max-w-sm md:max-w-xl relative">
-                            <div className="absolute -inset-4 bg-primary/10 blur-3xl rounded-full"></div>
-                            <Card className="relative rounded-sm border-primary/20 bg-black/80 backdrop-blur-3xl p-6 md:p-8 shadow-[0_0_50px_rgba(89,242,13,0.1)] glitch-border text-white">
-                                <div className="flex justify-between items-center border-b border-primary/10 pb-4 md:pb-6 mb-6 md:mb-8">
-                                    <div className="flex gap-3">
-                                        <div className="w-2 h-2 bg-red-500/80"></div>
-                                        <div className="w-2 h-2 bg-primary/80 shadow-[0_0_8px_#59f20d]"></div>
-                                    </div>
-                                    <div className="text-[10px] font-black text-primary/60 uppercase tracking-[0.3em]">
-                                        System.Release_Log</div>
-                                </div>
-                                <CardContent className="space-y-4 md:space-y-6 p-0 text-white">
-                                    <div className="flex items-center gap-4 md:gap-6 p-3 md:p-4 border border-primary/10 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all cursor-pointer group">
-                                        <div className="w-14 h-14 md:w-16 md:h-16 bg-gray-800 shrink-0 border border-primary/20 group-hover:border-primary/60 transition-all"
-                                            style={{ backgroundImage: "url('https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/2b/b9/fe/2bb9fef5-d7f3-8345-25a9-db0e79fde4e4/20UMGIM11048.rgb.jpg/600x600bb.jpg')", backgroundSize: "cover" }}>
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between mb-1">
-                                                <h4 className="text-white text-sm font-black uppercase tracking-widest group-hover:text-primary transition-colors">After Hours</h4>
-                                                <span className="text-primary text-[9px] font-black px-2 py-0.5 border border-primary/50 neon-text-strong">SYNCED</span>
-                                            </div>
-                                            <p className="text-slate-500 text-[10px] uppercase tracking-widest">Artist_ID: THE_WEEKND</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 md:gap-6 p-3 md:p-4 border border-white/5 bg-white/5 hover:border-primary/40 transition-all cursor-pointer group opacity-80 hover:opacity-100 relative z-10">
-                                        <div className="w-14 h-14 md:w-16 md:h-16 bg-gray-800 shrink-0 border border-white/10 group-hover:border-primary/60 transition-all"
-                                            style={{ backgroundImage: "url('https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/1b/fe/ea/1bfeea22-0fd6-a2af-afa1-1db7ff9838e7/13UAAIM69536.rgb.jpg/600x600bb.jpg')", backgroundSize: "cover" }}>
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between mb-1">
-                                                <h4 className="text-white text-sm font-black uppercase tracking-widest group-hover:text-primary transition-colors">Kiss Land</h4>
-                                                <span className="text-slate-500 text-[9px] font-black uppercase tracking-widest">T-MINUS 24H</span>
-                                            </div>
-                                            <p className="text-slate-500 text-[10px] uppercase tracking-widest">Artist_ID: THE_WEEKND</p>
-                                        </div>
-                                    </div>
-                                    <div className="absolute -bottom-6 -right-4 text-[80px] md:text-[120px] font-black text-primary/5 select-none pointer-events-none italic z-0">
-                                        愛
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Features Section */}
-                <section id="features" className="py-20 md:py-32 bg-background-dark relative">
-                    <div className="max-w-[1440px] mx-auto px-6 lg:px-12 relative z-10">
-                        <div className="mb-12 md:mb-24 flex flex-col md:flex-row justify-between items-end gap-6 md:gap-10">
-                            <div className="max-w-3xl">
-                                <h2 className="text-primary text-xs font-black uppercase tracking-[0.5em] mb-4 drop-shadow-[0_0_5px_#59f20d]">
-                                    Core Modules</h2>
-                                <h3 className="text-4xl md:text-5xl lg:text-7xl font-black text-white leading-none tracking-tighter uppercase">
-                                    ENGINEERED FOR <br /> THE OBSESSED.</h3>
-                            </div>
-                            <div className="text-primary/20 text-6xl md:text-8xl font-black italic select-none">01-03</div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-primary/10 border border-primary/10">
-                            <Card className="bg-background-dark p-8 md:p-12 hover:bg-surface-dark transition-all rounded-none border-none shadow-none group z-10 cursor-default">
-                                <CardHeader className="p-0 mb-6">
-                                    <div className="w-14 h-14 bg-primary/10 flex items-center justify-center text-primary group-hover:shadow-[0_0_20px_#59f20d] transition-all">
-                                        <span className="material-symbols-outlined !text-3xl">sensors</span>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <h4 className="text-2xl font-black text-white mb-4 md:mb-6 uppercase tracking-widest group-hover:text-primary transition-colors">
-                                        Neural Alerts</h4>
-                                    <p className="text-slate-400 leading-relaxed font-light">Sub-second latency notifications directly
-                                        to your neural interface. Never miss the drop.</p>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-background-dark p-8 md:p-12 hover:bg-surface-dark transition-all rounded-none border-none shadow-none group z-10 cursor-default">
-                                <CardHeader className="p-0 mb-6">
-                                    <div className="w-14 h-14 bg-primary/10 flex items-center justify-center text-primary group-hover:shadow-[0_0_20px_#59f20d] transition-all">
-                                        <span className="material-symbols-outlined !text-3xl">language</span>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <h4 className="text-2xl font-black text-white mb-4 md:mb-6 uppercase tracking-widest group-hover:text-primary transition-colors">
-                                        Global Net</h4>
-                                    <p className="text-slate-400 leading-relaxed font-light">Synthesizing data from every underground
-                                        circuit and major mainframe across the globe.</p>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="bg-background-dark p-8 md:p-12 hover:bg-surface-dark transition-all rounded-none border-none shadow-none group z-10 cursor-default">
-                                <CardHeader className="p-0 mb-6">
-                                    <div className="w-14 h-14 bg-primary/10 flex items-center justify-center text-primary group-hover:shadow-[0_0_20px_#59f20d] transition-all">
-                                        <span className="material-symbols-outlined !text-3xl">grid_view</span>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <h4 className="text-2xl font-black text-white mb-4 md:mb-6 uppercase tracking-widest group-hover:text-primary transition-colors">
-                                        Visual Matrix</h4>
-                                    <p className="text-slate-400 leading-relaxed font-light">A customizable tactical dashboard. Filter
-                                        the noise. Amplify the signal.</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-                </section>
-            </main>
-
-            <footer className="bg-background-dark border-t border-primary/5 py-12 md:py-16 relative">
-                <div className="max-w-[1440px] mx-auto px-6 lg:px-12 relative z-10">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-8 md:gap-12">
-                        <div className="flex items-center gap-4">
-                            <BeatDropLogo />
-                            <div>
-                                <h2 className="text-white text-xl font-black uppercase tracking-[0.3em]">BeatDrop</h2>
-                                <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.2em]">All Rights Reserved // 2024 Terminal</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-8 md:gap-12 text-[10px] font-black uppercase tracking-[0.4em]">
-                            <Link className="text-slate-500 hover:text-primary transition-colors" to="/terms">Terms</Link>
-                            <Link className="text-slate-500 hover:text-primary transition-colors" to="/privacy">Privacy</Link>
-                            <a className="text-slate-500 hover:text-primary transition-colors" href="#">Status</a>
-                        </div>
-                        <div className="flex gap-6">
-                            <a className="w-12 h-12 border border-primary/5 flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary transition-all group"
-                                href="#">
-                                <svg className="group-hover:drop-shadow-[0_0_5px_#59f20d]" fill="currentColor" height="18"
-                                    viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z">
-                                    </path>
-                                </svg>
-                            </a>
-                        </div>
+                    <div className="steps">
+                        <div className="step"><div className="no">01 / TRACK</div><h3>Add your artists</h3><p>Search Spotify and follow anyone — indie, underground, mainstream. BeatDrop starts listening for them.</p></div>
+                        <div className="step"><div className="no">02 / MAP</div><h3>Auto-built timeline</h3><p>Every upcoming single, album, show and session lands on a date-sorted calendar. No more scattered posters and tweets.</p></div>
+                        <div className="step"><div className="no">03 / SYNC</div><h3>Push to your calendar</h3><p>One-tap Google Calendar sync with color-mapped categories. Your release radar, in the calendar you already live in.</p></div>
                     </div>
                 </div>
+            </section>
+
+            {/* FEATURES */}
+            <section className="sec" id="feat">
+                <div className="wrap">
+                    <div className="sec-head">
+                        <div className="bd-tag" style={{ marginBottom: 16 }}>CAPABILITIES</div>
+                        <h2 className="bd-h1">One source of truth for your music world.</h2>
+                    </div>
+                    <div className="feat">
+                        <div className="fcard"><div className="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="11" cy="11" r="7" /><path d="m21 21-4-4" strokeLinecap="round" /></svg></div><div><h4>Spotify-powered search</h4><p>Pull real artist metadata, art and release feeds straight from the source.</p></div></div>
+                        <div className="fcard"><div className="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="4" width="18" height="18" rx="1" /><path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" /></svg></div><div><h4>Month · Week · Radar</h4><p>Three views of the same truth — grid, timeline, or a live countdown feed.</p></div></div>
+                        <div className="fcard"><div className="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 2v20M2 12h20" strokeLinecap="round" /></svg></div><div><h4>Category color mapping</h4><p>Albums, singles, concerts and sessions each get their own signal hue.</p></div></div>
+                        <div className="fcard"><div className="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 6v6l4 2" strokeLinecap="round" /><circle cx="12" cy="12" r="9" /></svg></div><div><h4>Countdown to every drop</h4><p>Down-to-the-second timers so you never miss a midnight release again.</p></div></div>
+                    </div>
+                </div>
+            </section>
+
+            {/* CTA */}
+            <section className="cta">
+                <div className="bd-haze" style={{ width: 680, height: 520, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
+                <div className="wrap" style={{ position: 'relative' }}>
+                    <div className="bd-tag" style={{ marginBottom: 22, justifyContent: 'center' }}>SYNC YOUR PULSE</div>
+                    <h2>Never miss a drop<br />in the <span className="neon-text">fog</span> again.</h2>
+                    <div style={{ marginTop: 36 }}><Link to="/register" className="bd-btn bd-btn--primary" style={{ padding: '17px 34px' }}>Start tracking — it's free</Link></div>
+                </div>
+            </section>
+
+            <footer className="pagefoot">
+                <p className="bd-label">BEATDROP © {new Date().getFullYear()} · LAT 34.0522°N · LON 118.2437°W · BUILD v1.0.0</p>
             </footer>
         </div>
     );

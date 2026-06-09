@@ -2,23 +2,27 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import Atmosphere from '../components/Atmosphere';
+
+const Logo = ({ size = 24 }) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" width={size} height={size}>
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9c.83 0 1.5-.67 1.5-1.5S7.83 8 7 8s-1.5.67-1.5 1.5S6.17 11 7 11zm10 0c.83 0 1.5-.67 1.5-1.5S17.83 8 17 8s-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-5 4c2.5 0 4.5-1.5 5.5-3.5h-11c1 2 3 3.5 5.5 3.5z" />
+    </svg>
+);
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
         if (!passwordRegex.test(password)) {
             toast.error('Password must be at least 8 characters long and contain at least one letter and one number.');
             return;
         }
-
         try {
             await login(email, password);
             navigate('/dashboard');
@@ -29,127 +33,88 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center relative bg-[#050705] dark">
+        <div className="auth-page">
             <style>{`
-                .neon-border-glow {
-                    box-shadow: 0 0 15px rgba(89, 242, 13, 0.4), inset 0 0 2px rgba(89, 242, 13, 0.4);
-                }
-                .neon-text-strong {
-                    text-shadow: 0 0 8px rgba(89, 242, 13, 0.4), 0 0 15px rgba(89, 242, 13, 0.2);
-                }
-                .scanline-overlay {
-                    background: linear-gradient(to bottom,
-                            transparent,
-                            transparent 50%,
-                            rgba(89, 242, 13, 0.03) 50%,
-                            rgba(89, 242, 13, 0.03));
-                    background-size: 100% 4px;
-                    pointer-events: none;
-                }
-                .bg-noise {
-                    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3BaseFilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/baseFilter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-                    opacity: 0.02;
-                }
-                .light-leak {
-                    background: radial-gradient(circle at center, rgba(89, 242, 13, 0.4) 0%, transparent 70%);
-                    filter: blur(80px);
-                }
-                .input-focus-glow:focus {
-                    box-shadow: 0 0 12px rgba(89, 242, 13, 0.4);
-                    border-color: #59f20d !important;
-                }
-                .raccoon-logo {
-                    filter: drop-shadow(0 0 8px rgba(89, 242, 13, 0.8));
-                }
+                .auth-page{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;position:relative;padding:88px 0 40px;gap:8px;background:var(--bd-bg);color:var(--bd-text);font-family:var(--font-display)}
+                .auth-bg-art{position:fixed;inset:0;z-index:0;background:repeating-linear-gradient(135deg,rgba(var(--bd-signal-rgb),.04) 0 12px,transparent 12px 24px),radial-gradient(120% 80% at 70% 10%,rgba(var(--bd-signal-rgb),.08),transparent 55%),var(--bd-void)}
+                .auth-bg-grad{position:fixed;inset:0;z-index:1;background:linear-gradient(180deg,var(--bd-bg),transparent 30%,transparent 70%,var(--bd-bg))}
+                .auth-topnav{position:fixed;top:0;left:0;width:100%;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:22px 32px}
+                .auth-topnav .brand{display:flex;align-items:center;gap:11px;color:var(--bd-text)}
+                .auth-topnav .brand svg{color:var(--bd-signal);filter:drop-shadow(0 0 7px var(--bd-glow))}
+                .auth-topnav .brand b{letter-spacing:.28em;font-size:15px}
+                .auth-topnav .back{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--bd-muted)}
+                .auth-topnav .back:hover{color:var(--bd-text)}
+                .auth-card{position:relative;z-index:10;width:100%;max-width:440px;margin:0 24px;background:rgba(8,12,9,.82);backdrop-filter:blur(18px);border:1px solid var(--bd-line-2);border-radius:var(--r-md);padding:44px 40px;box-shadow:0 0 0 1px rgba(var(--bd-signal-rgb),.05),0 40px 90px rgba(0,0,0,.7)}
+                .auth-logo{display:flex;justify-content:center;margin-bottom:26px;color:var(--bd-signal);filter:drop-shadow(0 0 12px var(--bd-glow))}
+                .auth-seg{display:flex;border:1px solid var(--bd-line-2);border-radius:var(--r-sm);overflow:hidden;margin-bottom:32px}
+                .auth-seg a{flex:1;text-align:center;font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:11px;color:var(--bd-muted);background:transparent;transition:all .16s}
+                .auth-seg a.on{background:var(--bd-signal);color:#04130a}
+                .auth-fld{margin-bottom:20px}
+                .auth-fld .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+                .auth-ftr{margin-top:26px;text-align:center}
+                .auth-foot{text-align:center;padding:22px 0 4px;position:relative;z-index:10}
             `}</style>
 
-            <div className="fixed inset-0 z-0">
-                <img alt="Cityscape" className="w-full h-full object-cover opacity-30 brightness-[0.2]"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKIjEF-JzZudqTfmKXO-x56uMkFhcf0Q9mJocWLXUA1iPgw_XH80mcWc60CTXeMTpUiZ8ima4oFW_8VfU7Ar9CTXFEM5a7bZn-buQy8oDg5uB3sBYsqxF_9PF4hoTC8Cta8E103TU8roWwRwP1xgVtb8T8uHB1Or2eO2BD3XcaCuSgmrasZ9aI1bfngzHsJsUHB0ZFeDTkI95mLS3QqVGblxRKlEzmnLzsfKeeVE8rF6TjGpdfnMtVPF61x5qljPjMTUT_jHJeDHip" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#050705] via-transparent to-[#050705]/80"></div>
+            <div className="auth-bg-art" />
+            <div className="auth-bg-grad" />
+            <Atmosphere />
+
+            <div className="auth-topnav">
+                <Link to="/" className="brand"><Logo /><b>BEATDROP</b></Link>
+                <Link to="/" className="back">← Back</Link>
             </div>
-            <div className="fixed top-1/3 -left-32 w-[600px] h-[600px] light-leak opacity-20 pointer-events-none"></div>
-            <div className="fixed bottom-1/3 -right-32 w-[600px] h-[600px] light-leak opacity-10 pointer-events-none"></div>
-            <div className="fixed inset-0 pointer-events-none bg-noise z-10"></div>
-            <div className="fixed inset-0 pointer-events-none scanline-overlay z-10 opacity-30"></div>
 
-            <header className="fixed top-0 left-0 w-full z-50 p-4 sm:p-8 lg:p-12">
-                <div className="flex items-center gap-4">
-                    <svg className="w-10 h-10 text-primary raccoon-logo" fill="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9c.83 0 1.5-.67 1.5-1.5S7.83 8 7 8s-1.5.67-1.5 1.5S6.17 11 7 11zm10 0c.83 0 1.5-.67 1.5-1.5S17.83 8 17 8s-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-5 4c2.5 0 4.5-1.5 5.5-3.5h-11c1 2 3 3.5 5.5 3.5z">
-                        </path>
-                    </svg>
-                    <span className="text-white text-2xl font-black tracking-[0.3em] uppercase neon-text-strong">BeatDrop</span>
+            <main className="auth-card">
+                <div className="auth-logo"><Logo size={46} /></div>
+
+                <div className="auth-seg">
+                    <Link to="/login" className="on">Log in</Link>
+                    <Link to="/register">Register</Link>
                 </div>
-            </header>
 
-            <main className="relative z-30 w-full max-w-md px-4 sm:px-6 flex flex-col items-center">
-                <div
-                    className="w-full relative bg-black/80 backdrop-blur-3xl border border-primary/30 rounded-sm p-6 sm:p-10 lg:p-14 shadow-[0_0_100px_rgba(0,0,0,1)]">
-                    <div className="flex justify-center mb-10">
-                        <svg className="w-16 h-16 text-primary raccoon-logo" fill="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9c.83 0 1.5-.67 1.5-1.5S7.83 8 7 8s-1.5.67-1.5 1.5S6.17 11 7 11zm10 0c.83 0 1.5-.67 1.5-1.5S17.83 8 17 8s-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm-5 4c2.5 0 4.5-1.5 5.5-3.5h-11c1 2 3 3.5 5.5 3.5z">
-                            </path>
-                        </svg>
+                <div style={{ textAlign: 'center', marginBottom: 30 }}>
+                    <h1 className="bd-h2" style={{ fontSize: 21 }}>Access the network</h1>
+                    <p className="bd-mono" style={{ fontSize: 12, color: 'var(--bd-muted)', marginTop: 8 }}>IDENTITY VERIFICATION REQUIRED</p>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    <div className="auth-fld">
+                        <label className="bd-label" htmlFor="email">USER_ID / EMAIL</label>
+                        <input className="bd-input" style={{ marginTop: 9 }} id="email" type="email"
+                            placeholder="IDENTITY_REQUIRED" value={email}
+                            onChange={e => setEmail(e.target.value)} required />
                     </div>
-
-                    <form className="space-y-8" onSubmit={handleSubmit}>
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mb-3 ml-1"
-                                htmlFor="email">Email</label>
-                            <input
-                                className="w-full bg-black border border-white/10 rounded-sm px-6 py-5 text-white text-sm focus:outline-none focus:ring-0 input-focus-glow transition-all placeholder:text-white/10"
-                                id="email" placeholder="IDENTITY_REQUIRED" type="email"
-                                value={email} onChange={e => setEmail(e.target.value)} required />
+                    <div className="auth-fld">
+                        <div className="row">
+                            <label className="bd-label" htmlFor="password">PASSWORD</label>
                         </div>
-                        <div>
-                            <div className="flex justify-between items-center mb-3">
-                                <label className="block text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 ml-1"
-                                    htmlFor="password">Password</label>
-                                <a className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600 hover:text-primary transition-colors"
-                                    href="#">Forgot?</a>
-                            </div>
-                            <input
-                                className="w-full bg-black border border-white/10 rounded-sm px-6 py-5 text-white text-sm focus:outline-none focus:ring-0 input-focus-glow transition-all placeholder:text-white/10"
-                                id="password" placeholder="●●●●●●●●" type="password"
-                                value={password} onChange={e => setPassword(e.target.value)} required />
-                        </div>
-                        <div className="pt-6">
-                            <button
-                                className="w-full bg-primary text-black py-5 rounded-sm text-[12px] font-black uppercase tracking-[0.5em] hover:brightness-110 transition-all neon-border-glow active:scale-[0.99] shadow-[0_0_30px_rgba(89,242,13,0.2)]"
-                                type="submit">
-                                Log In
-                            </button>
-                        </div>
-                    </form>
+                        <input className="bd-input" id="password" type="password"
+                            placeholder="••••••••" value={password}
+                            onChange={e => setPassword(e.target.value)} required />
+                    </div>
+                    <button className="bd-btn bd-btn--primary" style={{ width: '100%', marginTop: 8 }} type="submit">Log in</button>
+                </form>
 
-                    <div className="mt-8 relative flex items-center">
-                        <div className="flex-grow border-t border-white/10"></div>
-                        <span className="flex-shrink-0 mx-4 text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">OR</span>
-                        <div className="flex-grow border-t border-white/10"></div>
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '26px 0' }}>
+                    <hr className="bd-hair" style={{ flex: 1 }} />
+                    <span className="bd-label" style={{ fontSize: 11 }}>OR</span>
+                    <hr className="bd-hair" style={{ flex: 1 }} />
+                </div>
 
-                    <div className="mt-8 space-y-3">
-                        <a
-                            href="/api/auth/google"
-                            className="w-full bg-white/5 border border-white/10 text-white py-4 rounded-sm text-[12px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all flex items-center justify-center gap-3">
-                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-                            Continue with Google
-                        </a>
-                    </div>
-                    <div className="mt-12 text-center">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500">
-                            New to the network? <Link className="text-primary hover:text-primary/80 transition-colors" to="/register">Sign Up</Link>
-                        </p>
-                    </div>
+                <a href="/api/auth/google" className="bd-btn bd-btn--ghost" style={{ width: '100%' }}>
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="" width={16} height={16} />
+                    Continue with Google
+                </a>
+
+                <div className="auth-ftr">
+                    <p className="bd-mono" style={{ fontSize: 12, color: 'var(--bd-muted)' }}>
+                        New to the network? <Link to="/register" style={{ color: 'var(--bd-signal)' }}>Register</Link>
+                    </p>
                 </div>
             </main>
-            <footer className="fixed bottom-0 w-full p-10 text-center pointer-events-none">
-                <p className="text-[9px] text-slate-800 font-bold uppercase tracking-[0.8em]">BeatDrop © 2024</p>
+
+            <footer className="auth-foot">
+                <p className="bd-label" style={{ fontSize: 11, color: '#2c332b' }}>BEATDROP © {new Date().getFullYear()} · ENCRYPTED CHANNEL</p>
             </footer>
         </div>
     );
